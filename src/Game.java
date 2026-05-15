@@ -2,20 +2,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Game {
-    private Board playerOne;
-    private Board playerTwo;
-    private List<Factory> factories;
-    private CenterOfTable centerOfTable;
-    private TilesBag tilesBag;
+    private final Board playerOne;
+    private final Board playerTwo;
+    private final List<Factory> factories;
+    private final CenterOfTable centerOfTable;
+    private final TilesBag tilesBag;
+    private final TileBox tileBox;
     public Game(){
-        this.playerOne=new Board();
-        this.playerTwo=new Board();
-        this.tilesBag=new TilesBag();
+        this.tileBox=new TileBox();
+        this.tilesBag=new TilesBag(tileBox);
         this.centerOfTable=new CenterOfTable();
         this.factories=initializeFactories();
+        this.playerOne=new Board(tileBox);
+        this.playerTwo=new Board(tileBox);
     }
     private ArrayList<Factory> initializeFactories(){
-//        to be implemented, need 5 factories
-        return new ArrayList<Factory>();
+        ArrayList<Factory> factoriesList =new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            factoriesList.add(new Factory(tilesBag.pullFourTiles()));
+        }
+        return factoriesList;
     }
 }

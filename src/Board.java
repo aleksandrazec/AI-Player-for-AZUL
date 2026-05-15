@@ -1,22 +1,26 @@
 public class Board {
     private int currentPoints;
-    private BoardWall boardWall;
-    private BoardFloorLine boardFloorLine;
-    private BoardPatternLine firstPatternLine;
-    private BoardPatternLine secondPatternLine;
-    private BoardPatternLine thirdPatternLine;
-    private BoardPatternLine fourthPatternLine;
-    private BoardPatternLine fifthPatternLine;
+    private final BoardWall boardWall;
+    private final BoardFloorLine boardFloorLine;
+    private final BoardPatternLine[] boardPatternLines;
+    private boolean startingPlayerMarker;
+    private final TileBox tileBox;
 
-    public Board(){
+    public Board(TileBox tileBox){
+        this.tileBox=tileBox;
         boardWall=new BoardWall();
-        boardFloorLine=new BoardFloorLine();
-        firstPatternLine=new BoardPatternLine(1);
-        secondPatternLine=new BoardPatternLine(2);
-        thirdPatternLine= new BoardPatternLine(3);
-        fourthPatternLine=new BoardPatternLine(4);
-        fifthPatternLine=new BoardPatternLine(5);
+        boardFloorLine=new BoardFloorLine(this,tileBox);
+        boardPatternLines=new BoardPatternLine[]{
+            new BoardPatternLine(1,boardWall),
+            new BoardPatternLine(2,boardWall),
+            new BoardPatternLine(3,boardWall),
+            new BoardPatternLine(4,boardWall),
+            new BoardPatternLine(5,boardWall)
+        };
         currentPoints=0;
+        startingPlayerMarker=false;
     }
-
+    public void setStartingPlayerMarker(boolean value){
+        startingPlayerMarker=value;
+    }
 }
