@@ -1,41 +1,115 @@
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Game {
-    private final Board playerOne;
-    private final Board playerTwo;
-    private final List<Factory> factories;
-    private final CenterOfTable centerOfTable;
-    private final TilesBag tilesBag;
-    private final TileBox tileBox;
+    private Board playerOne;
+    private Board playerTwo;
+    // both should be represented as arrays of length 7, where at index
+    // 0-6 u find how many tiles there are of that type
+    private int[] tileBox;
+    private int[] tileBag;
+    // each factory has four or zero tiles and there is five factories
+    private int[][] factories;
+    // center of table has starting place marker when initialized
+    private int[] centerOfTable;
     private boolean playerOnesTurn;
-    private final SecureRandom random;
+    private SecureRandom random;
     public Game(){
-        this.tileBox=new TileBox();
-        this.tilesBag=new TilesBag(tileBox);
-        this.centerOfTable=new CenterOfTable();
-        this.factories=initializeFactories();
-        this.playerOne=new Board(tileBox,centerOfTable);
-        this.playerTwo=new Board(tileBox,centerOfTable);
-        random = new SecureRandom();
-//        playerOnesTurn= random.nextBoolean();
+        random=new SecureRandom();
         playerOnesTurn=true;
-    }
-    private ArrayList<Factory> initializeFactories(){
-        ArrayList<Factory> factoriesList =new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            factoriesList.add(new Factory(tilesBag.pullFourTiles()));
+
+        tileBox=new int[6];
+        tileBag=new int[6];
+
+        for (int i = 1; i < tileBag.length; i++) {
+            tileBag[i]=20;
         }
-        return factoriesList;
+
+        centerOfTable=new int[6];
+        centerOfTable[0]=1;
+
+        factories=new int[5][];
+        for (int i = 0; i < 5; i++) {
+            factories[i]=pullFourTilesFromBag();
+        }
+        playerOne=new Board(this, true);
+        playerTwo=new Board(this,false);
     }
-    public boolean isPlayerOnesTurn(){
-        return playerOnesTurn;
+    protected void setPlayerOnesTurn(boolean value){
+        playerOnesTurn=value;
     }
-//    public GameState getCurrentGameState(){
-//        return new GameState(playerOne, playerTwo, factories, centerOfTable);
-//    }
-//    public List<GameState> getPossibleGameStates(){
-//        return new ArrayList<>();
-//    }
+
+    private int[] pullFourTilesFromBag(){
+        int[] tiles=new int[6];
+        for (int i = 0; i < 4; i++) {
+            if(tileArrayIsEmpty(tileBag)){
+                fillTileBag();
+            }
+            int temp = 0;
+            while(temp!=6) {
+                temp = random.nextInt(1, 6);
+                if (tileBag[temp] != 0) {
+                    tiles[temp]++;
+                    tileBag[temp]--;
+                    temp=6;
+                }
+            }
+        }
+        return tiles;
+    }
+    protected boolean tileArrayIsEmpty(int[] array){
+        for (int i = 0; i < array.length; i++) {
+            if(array[i]>0){
+                return false;
+            }
+        }
+        return true;
+    }
+    private void fillTileBag(){
+        for (int i = 0; i < tileBag.length; i++) {
+            tileBag[i]+=tileBox[i];
+            tileBox[i]=0;
+        }
+    }
+    protected boolean addTilesToTileBox(int[] tilesToAdd){
+        if(tilesToAdd.length!=6 || tilesToAdd[0]!=0){
+            return false;
+        }
+        for (int i = 1; i < tileBox.length; i++) {
+            tileBox[i]+=tilesToAdd[i];
+        }
+        return true;
+    }
+    protected boolean addTilesToCenterOfTable(int[] tilesToAdd){
+        if(tilesToAdd.length!=6 || (tilesToAdd[0]!=0 && tilesToAdd[0]!=1)){
+            return false;
+        }
+        for (int i = 0; i < centerOfTable.length; i++) {
+            centerOfTable[i]+=tilesToAdd[i];
+        }
+        return true;
+    }
+    protected int[] takeTilesFromCenterOfTable(int type){
+        int[] takenTiles=new int[6];
+        if(type!=0){
+            if(centerOfTable[0]==1){
+                takenTiles[0]=1;
+                centerOfTable[0]=0;
+            }
+            takenTiles[type]=centerOfTable[type];
+            centerOfTable[type]=0;
+        }
+        return takenTiles;
+    }
+    protected int[] takeTilesFromFactory(int factoryIndex, int type){
+        int[] takenTiles=new int[6];
+        int[] tilesForCenter=new int[6];
+        takenTiles[type]=factories[factoryIndex][type];
+        factories[factoryIndex][type]=0;
+        for (int i = 1; i < 6; i++) {
+            tilesForCenter[i]=factories[factoryIndex][i];
+            factories[factoryIndex][i]=0;
+        }
+        addTilesToCenterOfTable(tilesForCenter);
+        return takenTiles;
+    }
 }
