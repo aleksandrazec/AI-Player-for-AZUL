@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ public class Game {
     private boolean maxTurn;
     private SecureRandom random;
     private boolean isFinished;
+    GameGUI gameGUI;
     public Game(){
         random=new SecureRandom();
         maxTurn =true;
@@ -37,6 +39,12 @@ public class Game {
         }
         max =new Board(this, true);
         min =new Board(this,false);
+
+        try {
+            gameGUI=new GameGUI(centerOfTable,factories);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Game(int[] tileBox, int[] tileBag, int[][] factories, int[] centerOfTable, boolean playerOnesTurn) {
