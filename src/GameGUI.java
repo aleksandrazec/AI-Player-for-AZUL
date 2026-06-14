@@ -1,61 +1,145 @@
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class GameGUI extends JFrame {
-    int fieldSize;
     JPanel panel;
     JPanel gameEnvironment;
+    List<Tile>[] factories;
+    List<Tile> centerOfTable;
     JPanel maxBoard;
     int maxTotalPoints;
     JLabel maxTotalPointsLabel;
+    Tile[][] maxWall;
+    Tile[][] maxPatternLines;
+    Tile[] maxMinusPoints;
+
     JPanel minBoard;
     int minTotalPoints;
     JLabel minTotalPointsLabel;
-    BufferedImage oneTile = ImageIO.read(new File("assets/one_tile.png"));
-    BufferedImage blackTile = ImageIO.read(new File("assets/black_tile.png"));
-    BufferedImage blueTile = ImageIO.read(new File("assets/blue_tile.png"));
-    BufferedImage cyanTile = ImageIO.read(new File("assets/cyan_tile.png"));
-    BufferedImage redTile = ImageIO.read(new File("assets/red_tile.png"));
-    BufferedImage yellowTile = ImageIO.read(new File("assets/yellow_tile.png"));
-    public BufferedImage getTileImage(int type){
+    Tile[][] minWall;
+    Tile[][] minPatternLines;
+    Tile[] minMinusPoints;
+    Color background = new Color(219,175,160);
+    ImageIcon oneTile = new ImageIcon("assets/one_tile.png");
+    ImageIcon blackTile = new ImageIcon("assets/black_tile.png");
+    ImageIcon blueTile = new ImageIcon("assets/blue_tile.png");
+    ImageIcon cyanTile = new ImageIcon("assets/cyan_tile.png");
+    ImageIcon redTile = new ImageIcon("assets/red_tile.png");
+    ImageIcon yellowTile =  new ImageIcon("assets/yellow_tile.png");
+    ImageIcon placeholderTile = new ImageIcon("assets/placeholder_tile.png");
+
+    public ImageIcon getTileImage(int type){
         return switch (type) {
+            case 0 -> oneTile;
             case 1 -> blueTile;
             case 2 -> yellowTile;
             case 3 -> redTile;
             case 4 -> blackTile;
             case 5 -> cyanTile;
-            default -> oneTile;
+            default -> placeholderTile;
         };
     }
-    public GameGUI(int[] centerOfTable, int[][] factories) throws IOException{
+    public class Tile{
+        protected JLabel label;
+        protected JButton button;
+        int type;
+        boolean isButton;
+        public Tile(int type, boolean inactive, boolean isButton){
+            this.isButton=isButton;
+            if(isButton){
+                this.button=new JButton();
+            }else {
+                this.label = new JLabel();
+            }
+            this.type=type;
+            if(inactive){
+                makeInactive();
+            }else{
+                makeActive();
+            }
+        }
+        public void setColor(Color color){
+            if(isButton){
+                button.setIcon(null);
+                button.setBackground(color);
+            }else{
+                label.setIcon(null);
+                label.setBackground(color);
+            }
+        }
+        public void makeActive(){
+            if(isButton){
+                button.setIcon(getTileImage(type));
+            }else {
+                label.setIcon(getTileImage(type));
+            }
+        }
+        public void makeInactive(){
+            ImageIcon icon=getTileImage(type);
+            final int w = icon.getIconWidth();
+            final int h = icon.getIconHeight();
+            GraphicsEnvironment ge =
+            GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice gd = ge.getDefaultScreenDevice();
+            GraphicsConfiguration gc = gd.getDefaultConfiguration();
+            BufferedImage image = gc.createCompatibleImage(w, h);
+            Graphics2D g2d = image.createGraphics();
+            icon.paintIcon(null, g2d, 0, 0);
+            Image gray = GrayFilter.createDisabledImage(image);
+            if(isButton){
+                button.setIcon(new ImageIcon(gray));
+            }else {
+                label.setIcon(new ImageIcon(gray));
+            }
+        }
+        public void makeEmpty(){
+            if(isButton){
+                button.setIcon(getTileImage(-1));
+            }else {
+                label.setIcon(getTileImage(-1));
+            }
+        }
+    }
+    public GameGUI(int[][] factories) throws IOException{
+        this.centerOfTable=new ArrayList<>();
+        this.factories=new List[5];
+        for (int i = 0; i < 5; i++) {
+            this.factories[i]=new ArrayList<>();
+        }
+        this.maxWall=new Tile[5][5];
+        this.minWall=new Tile[5][5];
+        this.maxPatternLines=new Tile[5][5];
+        this.minPatternLines=new Tile[5][5];
+        this.maxMinusPoints=new Tile[7];
+        this.minMinusPoints=new Tile[7];
+
         this.setTitle("Azul");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocation(300, 200);
-        this.setSize(1000, 500);
-        panel=createPanel(centerOfTable, factories);
+        this.setSize(1200, 400);
+        panel=createPanel(factories);
         this.add(panel);
         this.setVisible(true);
-
     }
-    public JPanel createPanel(int[] centerOfTable, int[][] factories){
+    public JPanel createPanel(int[][] factories){
         JPanel main = new JPanel();
         GridLayout gridLayout=new GridLayout(1,3);
         main.setLayout(gridLayout);
         maxBoard=createBoard(true);
         minBoard=createBoard(false);
-        gameEnvironment=createGameEnvironment(centerOfTable,factories);
+        gameEnvironment=createGameEnvironment(factories);
+        main.setBackground(background);
         main.add(maxBoard);
         main.add(gameEnvironment);
         main.add(minBoard);
         return main;
     }
-    public JPanel createGameEnvironment(int[] centerOfTable, int[][] factories){
+    public JPanel createGameEnvironment(int[][] factories){
         JPanel gameEnvironment=new JPanel();
         GridLayout gameEnvironmentLayout=new GridLayout(3,1);
         gameEnvironment.setLayout(gameEnvironmentLayout);
@@ -64,7 +148,7 @@ public class GameGUI extends JFrame {
         GridLayout factoriesPanelLayout=new GridLayout(1,5);
         factoriesPanel.setLayout(factoriesPanelLayout);
         for (int i = 0; i < 5; i++) {
-            factoriesPanel.add(createFactory(factories[i]));
+            factoriesPanel.add(createFactory(factories[i],i));
         }
 
 //        JPanel upperFactories =new JPanel();
@@ -85,17 +169,27 @@ public class GameGUI extends JFrame {
 //        because center can have maximum 16 tiles
         GridLayout centerLayout=new GridLayout(2,8);
         center.setLayout(centerLayout);
-
+        Tile oneTile=new Tile(0, false,true);
+        center.add(oneTile.button);
+        centerOfTable.add(oneTile);
+//        for (int i = 1; i < 16; i++) {
+//            Tile tile = new Tile(-1,false);
+//            center.add(tile.label);
+//        }
+        gameEnvironment.add(factoriesPanel);
+        gameEnvironment.add(center);
         return gameEnvironment;
     }
-    public JPanel createFactory(int[] factory){
+
+    public JPanel createFactory(int[] factory, int factoryIndex){
         JPanel factoryPanel=new JPanel();
         GridLayout gridLayout = new GridLayout(2,2);
         factoryPanel.setLayout(gridLayout);
         for (int i = 0; i < 6; i++) {
             for (int j = 0; j < factory[i]; j++) {
-                JLabel tile = new JLabel(new ImageIcon(getTileImage(i)));
-                factoryPanel.add(tile);
+                Tile tile = new Tile(i, false, true);
+                factoryPanel.add(tile.button);
+                factories[factoryIndex].add(tile);
             }
         }
         return factoryPanel;
@@ -108,14 +202,79 @@ public class GameGUI extends JFrame {
         JPanel patternLines=new JPanel();
         GridLayout patternLineLayout = new GridLayout(5,5);
         patternLines.setLayout(patternLineLayout);
+        if(isMax){
+            for (int i = 0; i < 5; i++) {
+                for (int j = 0; j < 5; j++) {
+                    if(StaticGameData.patternLinePattern[i][j]==0){
+                        Tile tile = new Tile(-1, false, false);
+                        tile.setColor(background);
+                        patternLines.add(tile.label);
+                        maxPatternLines[i][j]=tile;
+                    }else{
+                        Tile tile = new Tile(-1, false, true);
+                        patternLines.add(tile.button);
+                        maxPatternLines[i][j]=tile;
+                    }
+                }
+            }
+        }else {
+            for (int i = 0; i < 5; i++) {
+                for (int j = 0; j < 5; j++) {
+                    if(StaticGameData.patternLinePattern[i][j]==0){
+                        Tile tile = new Tile(-1, false, false);
+                        tile.setColor(background);
+                        patternLines.add(tile.label);
+                        minPatternLines[i][j]=tile;
+                    }else{
+                        Tile tile = new Tile(-1, false, true);
+                        patternLines.add(tile.button);
+                        minPatternLines[i][j]=tile;
+                    }
+                }
+            }
+        }
+
 
         JPanel wall=new JPanel();
         GridLayout wallLayout = new GridLayout(5,5);
         wall.setLayout(wallLayout);
-
+        if(isMax) {
+            for (int i = 0; i < 5; i++) {
+                for (int j = 0; j < 5; j++) {
+                    Tile tile = new Tile(StaticGameData.wallPattern[i][j], true, false);
+                    wall.add(tile.label);
+                    maxWall[i][j] = tile;
+                }
+            }
+        }else{
+            for (int i = 0; i < 5; i++) {
+                for (int j = 0; j < 5; j++) {
+                    Tile tile = new Tile(StaticGameData.wallPattern[i][j], true, false);
+                    wall.add(tile.label);
+                    minWall[i][j] = tile;
+                }
+            }
+        }
         JPanel minusPoints=new JPanel();
         GridLayout minusPointsLayout = new GridLayout(2,7);
         minusPoints.setLayout(minusPointsLayout);
+        for (int i = 0; i < 7; i++) {
+            JLabel minusPointsLabel = new JLabel(Integer.toString(StaticGameData.floorLineValues[i]), SwingConstants.CENTER);
+            minusPoints.add(minusPointsLabel);
+        }
+        if(isMax){
+            for (int i = 0; i < 7; i++) {
+                Tile tile=new Tile(-1, false, false);
+                minusPoints.add(tile.label);
+                maxMinusPoints[i]=tile;
+            }
+        }else{
+            for (int i = 0; i < 7; i++) {
+                Tile tile=new Tile(-1, false, false);
+                minusPoints.add(tile.label);
+                minMinusPoints[i]=tile;
+            }
+        }
 
         JPanel totalPoints=new JPanel();
         GridLayout totalPointsLayout=new GridLayout(1,2);

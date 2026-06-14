@@ -41,7 +41,7 @@ public class Game {
         min =new Board(this,false);
 
         try {
-            gameGUI=new GameGUI(centerOfTable,factories);
+            gameGUI=new GameGUI(factories);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

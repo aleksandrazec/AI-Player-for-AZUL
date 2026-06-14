@@ -7,4 +7,11 @@ public class StaticGameData {
             {3, 4, 5, 1, 2},
             {2, 3, 4, 5, 1}
     };
+    public static final int[][] patternLinePattern = new int[][]{
+            {0, 0, 0, 0, 1},
+            {0, 0, 0, 1, 1},
+            {0, 0, 1, 1, 1},
+            {0, 1, 1, 1, 1},
+            {1, 1, 1, 1, 1}
+    };
 }
